@@ -1,0 +1,7 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.5/Modules/FindOpenGL.cmake
+C:/Program Files/CMake/share/cmake-4.5/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-4.5/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-4.5/Modules/GNUInstallDirs.cmake
+C:/game_engine/thirdparty/glew/build/cmake/CMakeLists.txt
+C:/game_engine/thirdparty/glew/glew.pc.in

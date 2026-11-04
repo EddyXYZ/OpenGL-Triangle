@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Force | Select-Object Mode,Name; \\(Get-Command cmake -ErrorAction SilentlyContinue\\).Source; \\(Get-Command cl -ErrorAction SilentlyContinue\\).Source; \\(Get-Command g++ -ErrorAction SilentlyContinue\\).Source; \\(Get-Command ninja -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(cmake *)"
+    ]
+  }
+}

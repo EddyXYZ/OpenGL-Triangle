@@ -1,0 +1,15 @@
+C:/game_engine/build/CMakeFiles/GameDevelopmentProject.dir
+C:/game_engine/build/CMakeFiles/INSTALL.dir
+C:/game_engine/build/CMakeFiles/ALL_BUILD.dir
+C:/game_engine/build/CMakeFiles/ZERO_CHECK.dir
+C:/game_engine/build/glfw_build/CMakeFiles/uninstall.dir
+C:/game_engine/build/glfw_build/CMakeFiles/INSTALL.dir
+C:/game_engine/build/glfw_build/CMakeFiles/ALL_BUILD.dir
+C:/game_engine/build/glfw_build/src/CMakeFiles/glfw.dir
+C:/game_engine/build/glfw_build/src/CMakeFiles/update_mappings.dir
+C:/game_engine/build/glfw_build/src/CMakeFiles/INSTALL.dir
+C:/game_engine/build/glfw_build/docs/CMakeFiles/INSTALL.dir
+C:/game_engine/build/glew_build/CMakeFiles/glew.dir
+C:/game_engine/build/glew_build/CMakeFiles/glew_s.dir
+C:/game_engine/build/glew_build/CMakeFiles/INSTALL.dir
+C:/game_engine/build/glew_build/CMakeFiles/ALL_BUILD.dir
