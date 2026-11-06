@@ -59,14 +59,24 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // ----------------------------------------------------------------------
-    //                     Stage 4: put the vertex data in a VBO 
+    //            Stage 4: put the vertex data in a VBO + EBO
     // ----------------------------------------------------------------------
     
     float vertices[] = {
-        0.f, 0.5f, 0.0f, 
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f
+        0.5f,  0.5f, 0.0f,  // top right
+        0.5f, -0.5f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f   // top left 
     };
+
+    // An EBO stores the indices
+    unsigned int indices[] = {
+        0, 3, 1,    // First triangle
+        1, 3, 2     // Second triangle
+    };
+
+    std::cout << "Vertices: " << sizeof(vertices) / sizeof(float) / 3 << std::endl;            // 48 / 4 / 3 = 4
+    std::cout << "Indices:  " << sizeof(indices) / sizeof(unsigned int) << std::endl;          // 24 / 4 = 6
 
     GLuint vbo; // This creates an empty variable that will hold the buffer’s ID
     glGenBuffers(1, &vbo); // Generate 1 buffer name and write it into vbo
@@ -85,7 +95,7 @@ int main()
     // ----------------------------------------------------------------------
 
     // ----------------------------------------------------------------------
-    //                     Stage 5: describe the VBO’s data
+    //              Stage 5: describe the VBO’s + EBO's data
     // ----------------------------------------------------------------------
     // VBO = the data. VAO = the instructions for reading it.
     // the VAO links to the VBO because the VAO holds the instructions for reading it
@@ -105,7 +115,17 @@ int main()
 
     glEnableVertexAttribArray(0); // Turn attribute 0 on (attributes are off by default)
 
-    // Deselect the VAO: its settings are saved and later attribute calls can't change it
+    // Create the element buffer object
+    GLuint ebo;
+    glGenBuffers(1, &ebo);
+
+    // Binding an EBO writes straight into whichever VAO is currently bound because the VAO stores which EBO is bound
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // Make buffer ebo the current one for the GL_ELEMENT_ARRAY_BUFFER target
+    
+    // Allocate GPU memory for whatever buffer is bound to GL_ELEMENT_ARRAY_BUFFER, and copy my data into it
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Deselect the VAO: its settings are saved and later attribute calls + EBO binds can't change it
     glBindVertexArray(0); 
 
     // Unbind the VBO (the VAO already saved its link to it)
@@ -207,13 +227,19 @@ int main()
     //                     Stage 3: the render loop
     // ----------------------------------------------------------------------
     
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     while(!glfwWindowShouldClose(window))
     {
-        // Poll
+        // ----- Poll ----- //
+
         glfwPollEvents();
 
-        // Update
+        // ----- Update ----- //
+
         processInput(window);
+
+        // ----- Render ----- //
+
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // Set the "clear color"
         glClear(GL_COLOR_BUFFER_BIT); // Back buffer is filled with the "clear color"
         
@@ -221,13 +247,13 @@ int main()
         // Every render call after glUseProgram() will now use this program object
         glUseProgram(shaderProgram);
 
-        // Bind the VAO so glDrawArrays knows which vertex data to use and how to read it
+        // Bind the VAO so glDrawElements knows which vertex data to use and how to read it
         glBindVertexArray(vao);
 
-        // Render
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
-        // Swap
+        // ----- Swap ----- //
+
         glfwSwapBuffers(window);
     }
 
