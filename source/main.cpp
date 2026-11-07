@@ -140,7 +140,7 @@ int main()
     // This is where the VAO describes how to read the VBO (size, type, stride, offset)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-    // Turn attribute 0 on (attributes are off by default)
+    // Turn on attribute 0 (location 0 in the vertex shader) so the GPU reads aPos from the VBO (saved in the VAO)
     glEnableVertexAttribArray(0); 
 
     // Create the EBO
