@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <cmath>
 
 void framebufferSizeCallback(GLFWwindow*, int width, int height)
 {
@@ -78,21 +79,14 @@ int main()
     // ----------------------------------------------------------------------
     
     float vertices[] = {
-        0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left 
-    };
-
-    // An EBO stores the indices
-    unsigned int indices[] = {
-        0, 3, 1,    // First triangle
-        1, 3, 2     // Second triangle
+        // positions         // colors
+         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
+         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
     };
 
     // Check the amount of vertices and indices
     std::cout << "Vertices: " << sizeof(vertices) / sizeof(float) / 3 << std::endl;           
-    std::cout << "Indices:  " << sizeof(indices) / sizeof(unsigned int) << std::endl; 
     
     // Create a VBO
     GLuint vbo; // - This creates an empty variable that will hold the VBO’s ID
@@ -138,27 +132,19 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, vbo); 
 
     // This is where the VAO describes how to read the VBO (size, type, stride, offset)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-    // Turn on attribute 0 (location 0 in the vertex shader) so the GPU reads aPos from the VBO (saved in the VAO)
-    glEnableVertexAttribArray(0); 
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
+    glEnableVertexAttribArray(0);
 
-    // Create the EBO
-    GLuint ebo; // - This creates an empty variable that will hold the EBO's ID
-    glGenBuffers(1, &ebo); // - Generate 1 buffer ID and write it into EBO
-
-    // Binding the ID for the first time creates the buffer object (still empty)
-    // Binding an EBO writes into the currently bound VAO because the VAO stores which EBO is bound
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
-    // Allocate GPU memory into the buffer ID that is currently bound to GL_ELEMENT_ARRAY_BUFFER and copy the indices data into it
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    // Color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // Deselect the VAO because its settings were written by the calls above
     // Unbinding stops later attributes calls + EBO binds from changing the VAO
     glBindVertexArray(0); 
 
-    
     // ----------------------------------------------------------------------
     //                     Stage 6: the vertex shader
     /*
@@ -171,10 +157,15 @@ int main()
 
     const char* vertexShaderSource = R"(
         #version 330 core
-        layout (location = 0) in vec3 aPos;
+        layout (location = 0) in vec3 aPos;   // the position variable has attribute position 0
+        layout (location = 1) in vec3 aColor; // the color variable has attribute position 1
+        
+        out vec3 ourColor; // output a color to the fragment shader
+
         void main()
         {
-            gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+            gl_Position = vec4(aPos, 1.0);
+            ourColor = aColor; // set ourColor to the input color we got from the vertex data
         }
     )";
 
@@ -210,10 +201,12 @@ int main()
     
     const char* fragmentShaderSource = R"(
         #version 330 core
-        out vec4 FragColor;
+        out vec4 FragColor;  
+        in vec3 ourColor;
+        
         void main()
         {
-            FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+            FragColor = vec4(ourColor, 1.0);
         }
     )";
 
@@ -293,14 +286,19 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // - Set the "clear color"
         glClear(GL_COLOR_BUFFER_BIT); // - Back buffer is filled with the "clear color"
         
+        float timeValue = glfwGetTime();
+        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+
         // Activate the shader program object
         // Every render call after glUseProgram() will now use this program object
         glUseProgram(shaderProgram);
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
         // Bind the VAO so glDrawElements knows which vertex data to use and how to read it
         glBindVertexArray(vao);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // ----- Swap ----- //
 
