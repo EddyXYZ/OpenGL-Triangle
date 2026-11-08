@@ -7,6 +7,38 @@
 #include <iostream>
 #include <cmath>
 
+float vertices[] = {
+    // positions        // colors
+    0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,   // bottom left
+    0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
+};
+
+const char* vertexShaderSource = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;   // the position variable has attribute position 0
+    layout (location = 1) in vec3 aColor; // the color variable has attribute position 1
+    
+    out vec3 ourColor; // output a color to the fragment shader
+
+    void main()
+    {
+        gl_Position = vec4(aPos, 1.0);
+        ourColor = aColor; // set ourColor to the input color we got from the vertex data
+    }
+)";
+
+const char* fragmentShaderSource = R"(
+    #version 330 core
+    out vec4 FragColor;  
+    in vec3 ourColor;
+    
+    void main()
+    {
+        FragColor = vec4(ourColor, 1.0);
+    }
+)";
+
 void framebufferSizeCallback(GLFWwindow*, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -29,7 +61,7 @@ int main()
                         glfwTerminate, glfwMakeContextCurrent
     */
     // ----------------------------------------------------------------------
-    
+
     // Initialize the GLFW library, set the GLFW major and minor versions, and use OpenGL core
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -56,7 +88,7 @@ int main()
     */
     // ----------------------------------------------------------------------
     // All GL functions should be called once there is a current context and GLEW is initialized
-    
+
     // Check if the initialization for GLEW failed
     if(glewInit() != GLEW_OK)
     {
@@ -72,22 +104,24 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // ----------------------------------------------------------------------
-    //            Stage 4: put the vertex data in a VBO + EBO
+    //               Stage 4: put the vertex data in a VBO
     /*
         Functions used: glGenBuffers, glBindBuffer, glBufferData
     */
     // ----------------------------------------------------------------------
-    
-    float vertices[] = {
-        // positions         // colors
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
-    };
 
-    // Check the amount of vertices and indices
-    std::cout << "Vertices: " << sizeof(vertices) / sizeof(float) / 3 << std::endl;           
-    
+    /*
+    Example:
+    --------
+    GLuint vbo;                   vbo = ?            GPU: (nothing)
+    glGenBuffers(1, &vbo);        vbo = 1            GPU: ID 1 reserved
+    glBindBuffer(..., vbo);       GL_ARRAY_BUFFER → buffer 1
+    glBufferData(...);            GPU: buffer 1 = [# bytes of your vertex data]
+    */
+
+    // Check the amount of vertices
+    std::cout << "Vertices: " << sizeof(vertices) / sizeof(float) / 3 << std::endl; 
+
     // Create a VBO
     GLuint vbo; // - This creates an empty variable that will hold the VBO’s ID
     glGenBuffers(1, &vbo); // - Generate 1 buffer ID and write it into vbo
@@ -99,16 +133,7 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // ----------------------------------------------------------------------
-    //                             Example
-    // ----------------------------------------------------------------------
-    // GLuint vbo;                   vbo = ?            GPU: (nothing)
-    // glGenBuffers(1, &vbo);        vbo = 1            GPU: ID 1 reserved
-    // glBindBuffer(..., vbo);       GL_ARRAY_BUFFER → buffer 1
-    // glBufferData(...);            GPU: buffer 1 = [# bytes of your vertex data]
-    // ----------------------------------------------------------------------
-
-    // ----------------------------------------------------------------------
-    //          Stage 5: describe the VBO’s + EBO's data using a VAO
+    //          Stage 5: describe the VBO’s using a VAO
     /*
         Functions used: glGenVertexArrays, glBindVertexArray, glBindBuffer,
                         glVertexAttribPointer, glEnableVertexAttribArray,
@@ -132,14 +157,23 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, vbo); 
 
     // This is where the VAO describes how to read the VBO (size, type, stride, offset)
+    // --------------------------------------------------------------------------------
 
     // Position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
-    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(0); // - Turn on attribute 0 (off by default) so the vertex shader receives aPos
 
     // Color attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
-    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(1); // - Turn on attribute 1 (off by default) so the vertex shader receives aColor
+
+    /*
+    Example:
+    --------
+                            the picture's row   its numbers         where it ends up
+    location 0  ──►   POSITION (red)      offset 0,  stride 24  ──►  aPos
+    location 1  ──►   COLOR (green)       offset 12, stride 24  ──►  aColor
+    */
 
     // Deselect the VAO because its settings were written by the calls above
     // Unbinding stops later attributes calls + EBO binds from changing the VAO
@@ -154,20 +188,6 @@ int main()
     // ----------------------------------------------------------------------
     // a small program, which runs once per vertex on the GPU, that outputs the vertex’s position in gl_Position
     // gl_Position is used as the output of the vertex shader
-
-    const char* vertexShaderSource = R"(
-        #version 330 core
-        layout (location = 0) in vec3 aPos;   // the position variable has attribute position 0
-        layout (location = 1) in vec3 aColor; // the color variable has attribute position 1
-        
-        out vec3 ourColor; // output a color to the fragment shader
-
-        void main()
-        {
-            gl_Position = vec4(aPos, 1.0);
-            ourColor = aColor; // set ourColor to the input color we got from the vertex data
-        }
-    )";
 
     // Create a shader object 
     GLuint vertexShader; // - This creates an empty variable that will hold the vertex shader's ID
@@ -199,16 +219,6 @@ int main()
     // ----------------------------------------------------------------------
     // The fragment shader runs once per fragment and calculates the color output of pixels
     
-    const char* fragmentShaderSource = R"(
-        #version 330 core
-        out vec4 FragColor;  
-        in vec3 ourColor;
-        
-        void main()
-        {
-            FragColor = vec4(ourColor, 1.0);
-        }
-    )";
 
     // Create a shader object
     GLuint fragmentShader; // - This creates an empty variable that will hold the fragment shader's ID
@@ -265,8 +275,8 @@ int main()
     /*
         Functions used: glPolygonMode, glfwWindowShouldClose, glfwPollEvents,
                         processInput, glClearColor, glClear, glUseProgram,
-                        glBindVertexArray, glBindVertexArray, glDrawElements,
-                        glfwSwapBuffers, glfwTerminate
+                        glBindVertexArray, glDrawElements, glfwSwapBuffers, 
+                        lfwTerminate
     */
     // ----------------------------------------------------------------------
     
@@ -285,23 +295,18 @@ int main()
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // - Set the "clear color"
         glClear(GL_COLOR_BUFFER_BIT); // - Back buffer is filled with the "clear color"
-        
-        float timeValue = glfwGetTime();
-        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
 
         // Activate the shader program object
         // Every render call after glUseProgram() will now use this program object
         glUseProgram(shaderProgram);
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
-        // Bind the VAO so glDrawElements knows which vertex data to use and how to read it
+        // Bind the VAO so glDrawArrays knows which vertex data to use and how to read it
         glBindVertexArray(vao);
 
+        // Draw 3 vertices from the bound VAO as triangles, starting at vertex 0 (this starts the pipeline)
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // ----- Swap ----- //
-
+        // Show the finished frame: swap the back buffer (just drawn into) with the front buffer (on screen)
         glfwSwapBuffers(window);
     }
 
